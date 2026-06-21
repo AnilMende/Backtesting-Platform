@@ -1,5 +1,6 @@
 import sys
 import os
+import random
 
 sys.path.append(
     os.path.abspath(
@@ -13,60 +14,37 @@ from app.models.fundamental import Fundamental
 
 db = SessionLocal()
 
-sample_data = {
-    "RELIANCE.NS": {
-        "roce": 18,
-        "roe": 16,
-        "pe": 22,
-        "pat": 79000,
-        "revenue": 900000
-    },
-    "TCS.NS": {
-        "roce": 48,
-        "roe": 42,
-        "pe": 28,
-        "pat": 45000,
-        "revenue": 230000
-    },
-    "INFY.NS": {
-        "roce": 34,
-        "roe": 29,
-        "pe": 26,
-        "pat": 25000,
-        "revenue": 150000
-    },
-    "HDFCBANK.NS": {
-        "roce": 14,
-        "roe": 17,
-        "pe": 19,
-        "pat": 52000,
-        "revenue": 280000
-    }
-}
+companies = db.query(Company).all()
 
-for symbol, values in sample_data.items():
+inserted = 0
 
-    company = (
-        db.query(Company)
-        .filter(Company.symbol == symbol)
+for company in companies:
+
+    existing = (
+        db.query(Fundamental)
+        .filter(
+            Fundamental.company_id == company.id
+        )
         .first()
     )
 
-    if not company:
+    if existing:
         continue
 
-    record = Fundamental(
+    fundamental = Fundamental(
         company_id=company.id,
         fiscal_year=2025,
-        roce=values["roce"],
-        roe=values["roe"],
-        pe=values["pe"],
-        pat=values["pat"],
-        revenue=values["revenue"]
+        roce=random.randint(10, 50),
+        roe=random.randint(10, 40),
+        pe=random.randint(10, 40),
+        pat=random.randint(5000, 100000),
+        revenue=random.randint(50000, 1000000)
     )
 
-    db.add(record)
+    db.add(fundamental)
+
+    inserted += 1
 
 db.commit()
 
-print("Fundamentals Loaded Successfully")
+print(f"Inserted {inserted} fundamentals")
