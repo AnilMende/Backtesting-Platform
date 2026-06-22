@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.company import Company
 from app.models.fundamental import Fundamental
 from app.models.stock_price import StockPrice
-
+import statistics
 
 def run_strategy(
     db: Session,
@@ -331,6 +331,7 @@ def calculate_returns(
                 db.query(StockPrice)
                 .filter(
                     StockPrice.company_id == stock.id,
+                    StockPrice.trade_date >= period_start,
                     StockPrice.trade_date <= period_end
                 )
                 .order_by(
@@ -428,6 +429,109 @@ def calculate_returns(
         - 1
     ) * 100
 
+    portfolio_values = [
+        item["portfolio_value"]
+        for item in rebalance_history
+    ]
+
+    peak = portfolio_values[0]
+
+    max_drawdown = 0
+
+    drawdown_history = []
+
+    print(portfolio_values)
+
+    for i, value in enumerate(portfolio_values):
+
+        print(
+            f"Value={value}, Peak={peak}"
+        )
+        
+        if value > peak:
+            peak = value
+            
+        drawdown = (
+            (value - peak)
+            / peak
+        ) * 100
+
+        print(
+            f"Drawdown={drawdown}"
+        )
+        
+        max_drawdown = min(
+            max_drawdown,
+            drawdown
+        )
+        
+        drawdown_history.append({
+            "date":
+            rebalance_history[i][
+                "rebalance_date"
+            ],
+            
+            "drawdown":
+            round(drawdown, 2)
+        })
+
+    # sharp ratio
+
+    period_returns = []
+    
+    for i in range(
+        1,
+        len(portfolio_values)
+    ):
+        r = (
+            (
+                portfolio_values[i]
+                - portfolio_values[i - 1]
+            )
+            / portfolio_values[i - 1]
+        )
+        
+        period_returns.append(r)
+
+
+    risk_free_rate = 0.06
+    
+    if len(period_returns) > 1:
+        
+        avg_return = (
+            statistics.mean(period_returns)
+        )
+        
+        volatility = (
+            statistics.stdev(period_returns)
+        )
+        
+        sharpe_ratio = (
+            (
+                avg_return
+                - risk_free_rate
+            )
+            / volatility
+        ) if volatility > 0 else 0
+        
+    else:
+        sharpe_ratio = 0
+
+
+    # Top Winners
+
+    top_winners = sorted(
+        yearly_results,
+        key=lambda x: x["return_pct"],
+        reverse=True
+    )[:5]
+    
+    # Top Losers
+    top_losers = sorted(
+        yearly_results,
+        key=lambda x: x["return_pct"]
+    )[:5]
+
     return {
         "portfolio_size": portfolio_size,
         "initial_capital": capital,
@@ -444,7 +548,18 @@ def calculate_returns(
             2
         ),
         "rebalance_history": rebalance_history,
-        "stocks": all_results
+        "stocks": all_results,
+        "sharpe_ratio" : round(
+            sharpe_ratio,
+            2
+        ),
+        "max_drawdown" : round(
+            max_drawdown,
+            2
+        ),
+        "drawdown_history": drawdown_history,
+        "top_winners": top_winners,
+        "top_losers": top_losers,
     }
 
 
