@@ -4,6 +4,7 @@ import { runBacktest } from "../api/portfolioApi.js";
 
 const StrategyFrom = ({ setPortfolioData }) => {
 
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         min_roce: 15,
@@ -35,7 +36,9 @@ const StrategyFrom = ({ setPortfolioData }) => {
         e.preventDefault();
 
         try {
-            
+
+            setLoading(true);
+
             const data = await runBacktest(formData);
 
             console.log(data);
@@ -43,9 +46,19 @@ const StrategyFrom = ({ setPortfolioData }) => {
             setPortfolioData(data);
 
         } catch (error) {
-            console.error(error);
 
-            alert("Failed to run backtest");
+            // console.error(error);
+
+            // setLoading(false);
+
+            return (
+                <div className="bg-red-100 text-red-700 p-4 rounded">
+                    Failed to run backtest
+                </div>
+            )
+            
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -252,8 +265,10 @@ const StrategyFrom = ({ setPortfolioData }) => {
                 <button
                     type="submit"
                     className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700"
+                    disabled={loading}
                 >
-                    Run Backtest
+                    {loading ? "Running" : "Run Backtest"}
+
                 </button>
             </div>
         </form>

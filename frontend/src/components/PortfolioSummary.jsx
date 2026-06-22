@@ -31,6 +31,16 @@ const PortfolioSummary = ({ portfolio }) => {
                 <p>{portfolio.cagr}%</p>
             </div>
 
+            <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-semibold">Sharpe Ratio</h3>
+                <p>{portfolio.sharpe_ratio}</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-semibold">Max DrawDown</h3>
+                <p>{portfolio.max_drawdown}</p>
+            </div>
+
         </div>
     );
 };
